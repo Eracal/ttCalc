@@ -26,9 +26,14 @@ let run = async () => {
     }
   })
 
+  console.debug('nodeArr' ,nodeArr)
+
   // 创建类数组对象保存数据
   let collaspObj = {}
-  collaspObj.length = 24
+  Object.defineProperty(collaspObj, 'length', {
+    value: 24,
+    enumerable: false
+  })
 
   // 整理数据，求每时段平均值 
   nodeArr.forEach(curr => {
@@ -43,16 +48,29 @@ let run = async () => {
     } else {
       key = +time.slice(0, 2)
     }
+    if (key === 24) key = 0
+
     if (key in collaspObj) {
-      collaspObj[key] = parseInt((collaspObj[key] + num) / 2)
+      collaspObj[key] = {
+        sum: parseInt(collaspObj[key]['sum'] + num),
+        num: ++collaspObj[key]['num']
+      }
     } else {
-      collaspObj[key] = num
-      collaspObj.length++
+      collaspObj[key] = {
+        sum: num,
+        num: 1
+      }
     }
   })
 
+  for (let key in collaspObj) {
+    collaspObj[key]['average'] = collaspObj[key]['sum'] / collaspObj[key]['num']
+  }
+
+  console.debug('collaspObj', collaspObj)
+  
   // 寻找最大值
-  const MAX_NUM = Math.max(...Array.from(collaspObj).map(v => v ? v : 0))
+  const MAX_NUM = Math.max(...Array.from(collaspObj).map(v => v ? v['average'] : 0))
 
   let style = {
     time: `padding: 1px 2px; border-radius: 3px 0 0 3px; color: #fff; background: #606060;`,
@@ -69,6 +87,7 @@ let run = async () => {
   let styleIndex = 0
   Array.from(collaspObj).forEach((num, time) => {
     if (num) {
+      num = num.average
       const spaceNum = parseInt(30 * num / MAX_NUM)
       const spaceCharacter = Array.from({
         length: spaceNum
